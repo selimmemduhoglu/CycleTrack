@@ -4,10 +4,8 @@
     "slug": "cycletrack",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -20,26 +18,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.cycletrack.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "scheme": "cycletrack",
     "plugins": [
       "expo-router",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#ffffff",
-          "sounds": []
-        }
-      ]
+      "expo-notifications"
     ]
   }
 }
