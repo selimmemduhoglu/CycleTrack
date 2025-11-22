@@ -1,14 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, StatusBar, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { addDays, format, differenceInDays, startOfDay } from "date-fns";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// AsyncStorage anahtarları
+const STORAGE_KEY = "@CycleTrack:lastPeriodStart";
 
 export default function Index() {
   // State tanımlamaları
   const [lastPeriodStart, setLastPeriodStart] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Yükleme durumu
   const cycleLength = 28; // Döngü süresi (gün)
   const bleedingDays = 5; // Kanama süresi (gün)
+
+  // Uygulama açıldığında AsyncStorage'dan veriyi yükle
+  useEffect(() => {
+    loadPeriodStart();
+  }, []);
+
+  // AsyncStorage'dan regl başlangıç tarihini yükle
+  const loadPeriodStart = async () => {
+    try {
+      const savedDate = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedDate !== null) {
+        setLastPeriodStart(savedDate);
+      }
+    } catch (error) {
+      console.error("Veri yükleme hatası:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // lastPeriodStart değiştiğinde AsyncStorage'a kaydet
+  useEffect(() => {
+    if (!isLoading) {
+      savePeriodStart();
+    }
+  }, [lastPeriodStart, isLoading]);
+
+  // AsyncStorage'a regl başlangıç tarihini kaydet
+  const savePeriodStart = async () => {
+    try {
+      if (lastPeriodStart !== null) {
+        await AsyncStorage.setItem(STORAGE_KEY, lastPeriodStart);
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (error) {
+      console.error("Veri kaydetme hatası:", error);
+    }
+  };
 
   // Takvimde güne tıklama işlemi
   const handleDayPress = (day: DateData) => {
@@ -76,6 +120,15 @@ export default function Index() {
 
   const nextPeriodDate = getNextPeriodDate();
   const daysLeft = getDaysUntilNextPeriod();
+
+  // Yükleme sırasında boş ekran göster (isteğe bağlı)
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-white items-center justify-center">
+        <Text className="text-purple-600">Yükleniyor...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">

@@ -18,7 +18,8 @@
     "react-native-screens": "~3.31.0",
     "nativewind": "^4.0.1",
     "react-native-calendars": "^1.1301.0",
-    "date-fns": "^3.0.0"
+    "date-fns": "^3.0.0",
+    "@react-native-async-storage/async-storage": "^1.21.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
