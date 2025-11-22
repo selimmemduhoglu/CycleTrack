@@ -177,7 +177,7 @@ export default function Index() {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       
-      {/* Başlık Alanı - Modern Gradient Tasarım */}
+      {/* Başlık Alanı - Modern Tasarım */}
       <View className="bg-purple-200 pt-10 pb-12 px-6 shadow-md">
         <Text className="text-5xl font-extrabold text-purple-900 text-center tracking-tight mb-2">
           Döngü Takibi
@@ -229,67 +229,75 @@ export default function Index() {
           </View>
         )}
 
-        {/* Hızlı Erişim Butonları - Modern Kart Tasarımı */}
+        {/* Hızlı Erişim Butonları - Büyük ve Belirgin */}
         <View className="mx-5 mb-6">
-          <Text className="text-lg font-bold text-purple-900 mb-4 px-1">Hızlı Erişim</Text>
-          <View className="flex-row flex-wrap gap-3">
-            {/* Geçmiş Butonu */}
-            <TouchableOpacity
-              className="rounded-3xl p-5 shadow-lg border-2 border-purple-200"
-              style={{ 
-                backgroundColor: '#f3e8ff',
-                width: (width - 60) / 2 - 6
-              }}
-              onPress={() => router.push("/history")}
-              activeOpacity={0.7}
-            >
-              <Text className="text-4xl text-center mb-3">📅</Text>
-              <Text className="text-center text-purple-900 font-bold text-base">
-                Geçmiş
-              </Text>
-              <Text className="text-center text-purple-600 text-xs mt-1">
-                Döngüleri görüntüle
-              </Text>
-            </TouchableOpacity>
+          <Text className="text-xl font-bold text-purple-900 mb-4 px-1">Hızlı Erişim</Text>
+          
+          {/* Geçmiş Butonu - Tam Genişlik */}
+          <TouchableOpacity
+            className="rounded-3xl p-6 mb-4 shadow-lg border-2 border-purple-300 bg-purple-100"
+            onPress={() => router.push("/history")}
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center">
+              <View className="bg-purple-200 rounded-2xl p-4 mr-4">
+                <Text className="text-4xl">📅</Text>
+              </View>
+              <View className="flex-1">
+                <Text className="text-lg font-bold text-purple-900 mb-1">
+                  Geçmiş Döngüler
+                </Text>
+                <Text className="text-sm text-purple-600">
+                  Tüm kayıtlarınızı görüntüleyin
+                </Text>
+              </View>
+              <Text className="text-2xl text-purple-400">→</Text>
+            </View>
+          </TouchableOpacity>
 
-            {/* İstatistikler Butonu */}
-            <TouchableOpacity
-              className="rounded-3xl p-5 shadow-lg border-2 border-pink-200"
-              style={{ 
-                backgroundColor: '#fce7f3',
-                width: (width - 60) / 2 - 6
-              }}
-              onPress={() => router.push("/statistics")}
-              activeOpacity={0.7}
-            >
-              <Text className="text-4xl text-center mb-3">📊</Text>
-              <Text className="text-center text-pink-900 font-bold text-base">
-                İstatistikler
-              </Text>
-              <Text className="text-center text-pink-600 text-xs mt-1">
-                Analiz ve raporlar
-              </Text>
-            </TouchableOpacity>
+          {/* İstatistikler Butonu - Tam Genişlik */}
+          <TouchableOpacity
+            className="rounded-3xl p-6 mb-4 shadow-lg border-2 border-pink-300 bg-pink-100"
+            onPress={() => router.push("/statistics")}
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center">
+              <View className="bg-pink-200 rounded-2xl p-4 mr-4">
+                <Text className="text-4xl">📊</Text>
+              </View>
+              <View className="flex-1">
+                <Text className="text-lg font-bold text-pink-900 mb-1">
+                  İstatistikler
+                </Text>
+                <Text className="text-sm text-pink-600">
+                  Analiz ve detaylı raporlar
+                </Text>
+              </View>
+              <Text className="text-2xl text-pink-400">→</Text>
+            </View>
+          </TouchableOpacity>
 
-            {/* Ayarlar Butonu */}
-            <TouchableOpacity
-              className="rounded-3xl p-5 shadow-lg border-2 border-indigo-200"
-              style={{ 
-                backgroundColor: '#eef2ff',
-                width: (width - 60) / 2 - 6
-              }}
-              onPress={() => router.push("/settings")}
-              activeOpacity={0.7}
-            >
-              <Text className="text-4xl text-center mb-3">⚙️</Text>
-              <Text className="text-center text-indigo-900 font-bold text-base">
-                Ayarlar
-              </Text>
-              <Text className="text-center text-indigo-600 text-xs mt-1">
-                Özelleştir
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {/* Ayarlar Butonu - Tam Genişlik */}
+          <TouchableOpacity
+            className="rounded-3xl p-6 shadow-lg border-2 border-indigo-300 bg-indigo-100"
+            onPress={() => router.push("/settings")}
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center">
+              <View className="bg-indigo-200 rounded-2xl p-4 mr-4">
+                <Text className="text-4xl">⚙️</Text>
+              </View>
+              <View className="flex-1">
+                <Text className="text-lg font-bold text-indigo-900 mb-1">
+                  Ayarlar
+                </Text>
+                <Text className="text-sm text-indigo-600">
+                  Döngü süresini özelleştirin
+                </Text>
+              </View>
+              <Text className="text-2xl text-indigo-400">→</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Takvim Container - Modern Tasarım */}
@@ -336,10 +344,6 @@ export default function Index() {
             className="rounded-3xl py-5 px-8 shadow-xl border-2 border-pink-400"
             style={{ backgroundColor: '#FF69B4' }}
             activeOpacity={0.8}
-            onPress={() => {
-              // Takvimi açmak için bir gün seçilmesi gerekiyor
-              // Bu buton bilgilendirme amaçlı
-            }}
           >
             <View className="flex-row items-center justify-center">
               <Text className="text-3xl mr-3">➕</Text>
