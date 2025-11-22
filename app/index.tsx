@@ -44,8 +44,26 @@ export default function Index() {
     });
 
     return () => {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
+      // Listener'ları temizle - Expo Notifications yeni versiyonunda subscription objesi döner
+      if (notificationListener.current) {
+        try {
+          // Subscription objesi varsa remove() metodunu kullan
+          if (typeof notificationListener.current.remove === 'function') {
+            notificationListener.current.remove();
+          }
+        } catch (e) {
+          // Hata durumunda görmezden gel
+        }
+      }
+      if (responseListener.current) {
+        try {
+          if (typeof responseListener.current.remove === 'function') {
+            responseListener.current.remove();
+          }
+        } catch (e) {
+          // Hata durumunda görmezden gel
+        }
+      }
     };
   }, []);
 
@@ -165,16 +183,23 @@ export default function Index() {
   const cancelNotification = async () => {
     try {
       const savedNotificationId = await AsyncStorage.getItem(NOTIFICATION_ID_KEY);
-      if (savedNotificationId) {
-        // Bildirim ID'si string olarak kullanılmalı
+      if (savedNotificationId && savedNotificationId.trim() !== "" && savedNotificationId !== "NaN") {
+        // Bildirim ID'si string olarak kullanılmalı ve geçerli olmalı
         await Notifications.cancelScheduledNotificationAsync(savedNotificationId);
         await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
         console.log("Bildirim iptal edildi:", savedNotificationId);
+      } else {
+        // Geçersiz ID varsa temizle
+        await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
       }
     } catch (error) {
       console.error("Bildirim iptal hatası:", error);
       // Hata durumunda ID'yi temizle
-      await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
+      try {
+        await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
+      } catch (e) {
+        // AsyncStorage hatası görmezden gel
+      }
     }
   };
 
