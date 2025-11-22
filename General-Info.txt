@@ -1,0 +1,19 @@
+Console loglarını görme yöntemleri
+Yöntem 1: Terminal (PowerShell)
+Expo çalışırken terminalde loglar görünür. Daha detaylı görmek için:
+Expo çalışırken terminalde j tuşuna bas → Debugger açılır
+Veya Chrome'da http://localhost:8081/debugger-ui adresine git
+
+Yöntem 2: React Native Debugger
+Daha iyi bir debug deneyimi için:
+Chrome'da http://localhost:8081/debugger-ui aç
+Console sekmesine git
+Tüm console.log ve hatalar burada görünür
+
+
+öntem 3: Terminal'de filtreleme
+PowerShell'de sadece hataları görmek için:
+# Expo çalışırken, başka bir PowerShell penceresi aç ve:cd C:\Users\TREASY-03\source\repos\CycleTrack# Logları dosyaya kaydet (opsiyonel)
+Şimdi ne yapalım?
+Terminaldeki hataları buraya yapıştır
+Veya Chrome DevTools'u açıp Console sekmesinden hataları paylaş

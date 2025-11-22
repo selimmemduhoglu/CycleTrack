@@ -1,105 +1,53 @@
-import { useState, useEffect, useRef } from "react";
-import { View, Text, StatusBar, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, StatusBar, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
-import { addDays, format, differenceInDays, startOfDay, setHours, setMinutes } from "date-fns";
+import { addDays, format, differenceInDays, startOfDay } from "date-fns";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Notifications from "expo-notifications";
-
-// Bildirim handler yapılandırması
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+import { useRouter } from "expo-router";
 
 // AsyncStorage anahtarları
 const STORAGE_KEY = "@CycleTrack:lastPeriodStart";
-const NOTIFICATION_ID_KEY = "@CycleTrack:notificationId";
+const PERIODS_HISTORY_KEY = "@CycleTrack:periodsHistory";
+const SETTINGS_KEY = "@CycleTrack:settings";
+
+// Varsayılan ayarlar
+const DEFAULT_CYCLE_LENGTH = 28;
+const DEFAULT_BLEEDING_DAYS = 5;
 
 export default function Index() {
+  const router = useRouter();
+  
   // State tanımlamaları
   const [lastPeriodStart, setLastPeriodStart] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Yükleme durumu
-  const [notificationPermission, setNotificationPermission] = useState<boolean>(false);
-  const notificationListener = useRef<any>();
-  const responseListener = useRef<any>();
-  const cycleLength = 28; // Döngü süresi (gün)
-  const bleedingDays = 5; // Kanama süresi (gün)
+  const [isLoading, setIsLoading] = useState(true);
+  const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE_LENGTH);
+  const [bleedingDays, setBleedingDays] = useState(DEFAULT_BLEEDING_DAYS);
 
-  // Uygulama açıldığında AsyncStorage'dan veriyi yükle ve bildirim iznini kontrol et
+  // Uygulama açıldığında verileri yükle
   useEffect(() => {
-    loadPeriodStart();
-    checkNotificationPermission();
-    
-    // Bildirim listener'ları
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      console.log("Bildirim alındı:", notification);
-    });
-
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log("Bildirime tıklandı:", response);
-    });
-
-    return () => {
-      // Listener'ları temizle - Expo Notifications yeni versiyonunda subscription objesi döner
-      if (notificationListener.current) {
-        try {
-          // Subscription objesi varsa remove() metodunu kullan
-          if (typeof notificationListener.current.remove === 'function') {
-            notificationListener.current.remove();
-          }
-        } catch (e) {
-          // Hata durumunda görmezden gel
-        }
-      }
-      if (responseListener.current) {
-        try {
-          if (typeof responseListener.current.remove === 'function') {
-            responseListener.current.remove();
-          }
-        } catch (e) {
-          // Hata durumunda görmezden gel
-        }
-      }
-    };
+    loadData();
   }, []);
 
-  // Bildirim iznini kontrol et
-  const checkNotificationPermission = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setNotificationPermission(status === "granted");
-  };
-
-  // Bildirim izni iste
-  const requestNotificationPermission = async () => {
+  // Verileri yükle
+  const loadData = async () => {
     try {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status === "granted") {
-        setNotificationPermission(true);
-        Alert.alert("Başarılı", "Bildirim izni verildi!");
-        
-        // Eğer zaten bir tarih varsa bildirimi planla
-        if (lastPeriodStart) {
-          scheduleNotification();
-        }
-      } else {
-        Alert.alert("İzin Reddedildi", "Bildirimler için izin gereklidir.");
-      }
-    } catch (error) {
-      console.error("Bildirim izni hatası:", error);
-      Alert.alert("Hata", "Bildirim izni alınamadı.");
-    }
-  };
-
-  // AsyncStorage'dan regl başlangıç tarihini yükle
-  const loadPeriodStart = async () => {
-    try {
+      // Son regl başlangıcını yükle
       const savedDate = await AsyncStorage.getItem(STORAGE_KEY);
       if (savedDate !== null) {
         setLastPeriodStart(savedDate);
+      }
+
+      // Ayarları yükle
+      const savedSettings = await AsyncStorage.getItem(SETTINGS_KEY);
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setCycleLength(settings.cycleLength || DEFAULT_CYCLE_LENGTH);
+        setBleedingDays(settings.bleedingDays || DEFAULT_BLEEDING_DAYS);
+      } else {
+        // Varsayılan ayarları kullan
+        setCycleLength(DEFAULT_CYCLE_LENGTH);
+        setBleedingDays(DEFAULT_BLEEDING_DAYS);
       }
     } catch (error) {
       console.error("Veri yükleme hatası:", error);
@@ -108,98 +56,40 @@ export default function Index() {
     }
   };
 
-  // lastPeriodStart değiştiğinde AsyncStorage'a kaydet ve bildirimi planla
+  // lastPeriodStart değiştiğinde AsyncStorage'a kaydet
   useEffect(() => {
     if (!isLoading) {
       savePeriodStart();
-      if (lastPeriodStart && notificationPermission) {
-        scheduleNotification();
-      }
     }
-  }, [lastPeriodStart, isLoading, notificationPermission]);
+  }, [lastPeriodStart, isLoading]);
 
   // AsyncStorage'a regl başlangıç tarihini kaydet
   const savePeriodStart = async () => {
     try {
       if (lastPeriodStart !== null) {
         await AsyncStorage.setItem(STORAGE_KEY, lastPeriodStart);
+        
+        // Geçmişe ekle
+        const history = await getPeriodHistory();
+        if (!history.includes(lastPeriodStart)) {
+          history.push(lastPeriodStart);
+          await AsyncStorage.setItem(PERIODS_HISTORY_KEY, JSON.stringify(history));
+        }
       } else {
         await AsyncStorage.removeItem(STORAGE_KEY);
-        // Tarih silindiğinde bildirimi de iptal et
-        cancelNotification();
       }
     } catch (error) {
       console.error("Veri kaydetme hatası:", error);
     }
   };
 
-  // Bildirimi planla
-  const scheduleNotification = async () => {
-    if (!lastPeriodStart) return;
-
+  // Geçmiş döngüleri al
+  const getPeriodHistory = async (): Promise<string[]> => {
     try {
-      // Önce eski bildirimi iptal et
-      await cancelNotification();
-
-      // Sonraki tahmini regl tarihini hesapla
-      const startDate = new Date(lastPeriodStart);
-      const nextPeriodStart = addDays(startDate, cycleLength);
-      
-      // Bildirim tarihi: Tahmini regl tarihinden 2 gün önce
-      const notificationDate = addDays(nextPeriodStart, -2);
-      
-      // Bugünden önceki bir tarihse bildirim planlama
-      const today = startOfDay(new Date());
-      if (notificationDate < today) {
-        console.log("Bildirim tarihi geçmişte, planlanmadı");
-        return;
-      }
-
-      // Saat 09:00 için tarih ayarla
-      const notificationDateTime = setMinutes(setHours(notificationDate, 9), 0);
-
-      // Bildirim içeriği - Yeni trigger formatı kullanılıyor
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Döngü Takibi",
-          body: "Tahmini reglinize 2 gün kaldı.",
-          sound: true,
-        },
-        trigger: {
-          type: "date",
-          date: notificationDateTime,
-        },
-      });
-
-      // Bildirim ID'sini kaydet
-      await AsyncStorage.setItem(NOTIFICATION_ID_KEY, notificationId.toString());
-      console.log("Bildirim planlandı:", notificationId, "Tarih:", format(notificationDateTime, "dd MMMM yyyy HH:mm"));
+      const history = await AsyncStorage.getItem(PERIODS_HISTORY_KEY);
+      return history ? JSON.parse(history) : [];
     } catch (error) {
-      console.error("Bildirim planlama hatası:", error);
-    }
-  };
-
-  // Bildirimi iptal et
-  const cancelNotification = async () => {
-    try {
-      const savedNotificationId = await AsyncStorage.getItem(NOTIFICATION_ID_KEY);
-      if (savedNotificationId && savedNotificationId.trim() !== "" && savedNotificationId !== "NaN") {
-        // Bildirim ID'si string olarak kullanılmalı ve geçerli olmalı
-        await Notifications.cancelScheduledNotificationAsync(savedNotificationId);
-        await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
-        console.log("Bildirim iptal edildi:", savedNotificationId);
-      } else {
-        // Geçersiz ID varsa temizle
-        await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
-      }
-    } catch (error) {
-      console.error("Bildirim iptal hatası:", error);
-      // Hata durumunda ID'yi temizle
-      try {
-        await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
-      } catch (e) {
-        // AsyncStorage hatası görmezden gel
-      }
+      return [];
     }
   };
 
@@ -270,11 +160,11 @@ export default function Index() {
   const nextPeriodDate = getNextPeriodDate();
   const daysLeft = getDaysUntilNextPeriod();
 
-  // Yükleme sırasında boş ekran göster (isteğe bağlı)
+  // Yükleme sırasında boş ekran göster
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <Text className="text-purple-600">Yükleniyor...</Text>
+        <Text className="text-purple-600 text-lg">Yükleniyor...</Text>
       </SafeAreaView>
     );
   }
@@ -283,81 +173,91 @@ export default function Index() {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       
-      {/* Başlık Alanı - Pastel Pembe/Eflatun */}
-      <View className="bg-purple-100 pt-6 pb-8 px-6">
-        <Text className="text-4xl font-bold text-purple-700 text-center">
+      {/* Başlık Alanı - Modern Tasarım */}
+      <View className="bg-purple-200 pt-8 pb-10 px-6">
+        <Text className="text-5xl font-extrabold text-purple-800 text-center tracking-tight">
           Döngü Takibi
         </Text>
-        <Text className="text-base text-purple-600 text-center mt-2">
-          Sağlığınızı takip edin
+        <Text className="text-base text-purple-600 text-center mt-3 font-medium">
+          Sağlığınızı takip edin, kendinizi tanıyın
         </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* Bildirim İzni Butonu */}
-        {!notificationPermission && (
-          <View className="mx-4 mt-4 mb-2">
-            <TouchableOpacity
-              className="rounded-xl py-3 px-4 bg-yellow-100 border border-yellow-300"
-              onPress={requestNotificationPermission}
-              activeOpacity={0.8}
-            >
-              <Text className="text-yellow-800 font-semibold text-center">
-                🔔 Bildirim İzni İste
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Bildirim İzni Durumu */}
-        {notificationPermission && (
-          <View className="mx-4 mt-4 mb-2">
-            <View className="rounded-xl py-2 px-4 bg-green-100 border border-green-300">
-              <Text className="text-green-800 font-semibold text-center text-sm">
-                ✅ Bildirim izni verildi
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Bilgi Kartı - Tahmini Sonraki Regl ve Kalan Gün */}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+        {/* Bilgi Kartı - Modern Tasarım */}
         {lastPeriodStart && (
-          <View className="mx-4 mt-4 mb-4 rounded-2xl bg-pink-50 p-5 shadow-md border border-pink-200">
+          <View className="mx-5 mt-6 mb-5 rounded-3xl bg-pink-50 p-6 shadow-xl border-2 border-pink-200">
             {nextPeriodDate && (
-              <View className="mb-3">
-                <Text className="text-sm text-purple-600 font-semibold mb-1">
+              <View className="mb-4 pb-4 border-b border-pink-200">
+                <Text className="text-xs text-purple-500 font-semibold mb-2 uppercase tracking-wide">
                   Tahmini Sonraki Regl
                 </Text>
-                <Text className="text-xl font-bold text-purple-800">
+                <Text className="text-2xl font-bold text-purple-900">
                   {nextPeriodDate}
                 </Text>
               </View>
             )}
             {daysLeft !== null && daysLeft >= 0 && (
               <View>
-                <Text className="text-sm text-purple-600 font-semibold mb-1">
+                <Text className="text-xs text-purple-500 font-semibold mb-2 uppercase tracking-wide">
                   Döngüye Kalan Gün
                 </Text>
-                <Text className="text-2xl font-bold text-pink-600">
-                  {daysLeft} gün
-                </Text>
+                <View className="flex-row items-baseline">
+                  <Text className="text-4xl font-extrabold text-pink-600 mr-2">
+                    {daysLeft}
+                  </Text>
+                  <Text className="text-lg text-purple-700 font-semibold">
+                    gün
+                  </Text>
+                </View>
               </View>
             )}
           </View>
         )}
 
-        {/* Takvim Container - Yuvarlatılmış Köşeler */}
-        <View className="mx-4 mt-2 mb-6 rounded-3xl overflow-hidden shadow-lg bg-white">
+        {/* Hızlı Erişim Butonları */}
+        <View className="flex-row mx-5 mb-5 gap-3">
+          <TouchableOpacity
+            className="flex-1 rounded-2xl bg-purple-100 p-4 border-2 border-purple-200"
+            onPress={() => router.push("/history")}
+            activeOpacity={0.7}
+          >
+            <Text className="text-center text-purple-800 font-bold text-sm">
+              📅 Geçmiş
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-1 rounded-2xl bg-pink-100 p-4 border-2 border-pink-200"
+            onPress={() => router.push("/statistics")}
+            activeOpacity={0.7}
+          >
+            <Text className="text-center text-pink-800 font-bold text-sm">
+              📊 İstatistikler
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-1 rounded-2xl bg-purple-100 p-4 border-2 border-purple-200"
+            onPress={() => router.push("/settings")}
+            activeOpacity={0.7}
+          >
+            <Text className="text-center text-purple-800 font-bold text-sm">
+              ⚙️ Ayarlar
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Takvim Container - Modern Tasarım */}
+        <View className="mx-5 mt-2 mb-6 rounded-3xl overflow-hidden shadow-2xl bg-white border-2 border-purple-100">
           <Calendar
-            // Tema renkleri - Pastel tonlar
+            // Tema renkleri - Modern pastel tonlar
             theme={{
               backgroundColor: '#ffffff',
               calendarBackground: '#ffffff',
               textSectionTitleColor: '#a855f7', // Eflatun
-              selectedDayBackgroundColor: '#ec4899', // Pembe
+              selectedDayBackgroundColor: '#C2185B', // Koyu Pembe
               selectedDayTextColor: '#ffffff',
               todayTextColor: '#ec4899',
-              dayTextColor: '#6b7280',
+              dayTextColor: '#4b5563',
               textDisabledColor: '#d1d5db',
               dotColor: '#ec4899',
               selectedDotColor: '#ffffff',
@@ -366,18 +266,16 @@ export default function Index() {
               textDayFontFamily: 'System',
               textMonthFontFamily: 'System',
               textDayHeaderFontFamily: 'System',
-              textDayFontWeight: '400',
-              textMonthFontWeight: '600',
+              textDayFontWeight: '500',
+              textMonthFontWeight: '700',
               textDayHeaderFontWeight: '600',
               textDayFontSize: 16,
-              textMonthFontSize: 18,
+              textMonthFontSize: 20,
               textDayHeaderFontSize: 13,
             }}
-            // Yuvarlatılmış stil için
             style={{
               borderRadius: 24,
             }}
-            // Görünüm ayarları
             markingType="custom"
             markedDates={getMarkedDates()}
             onDayPress={handleDayPress}
@@ -386,15 +284,15 @@ export default function Index() {
           />
         </View>
 
-        {/* Regl Başlangıcı Ekle Butonu */}
-        <View className="px-4">
+        {/* Regl Başlangıcı Ekle Butonu - Modern Tasarım */}
+        <View className="px-5 mb-5">
           <TouchableOpacity
-            className="rounded-2xl py-5 px-6 shadow-md"
+            className="rounded-3xl py-6 px-8 shadow-lg border-2 border-pink-300"
             style={{ backgroundColor: '#FF69B4' }}
             activeOpacity={0.8}
           >
-            <Text className="text-white text-xl font-bold text-center">
-              Regl Başlangıcı Ekle
+            <Text className="text-white text-2xl font-bold text-center tracking-wide">
+              ➕ Regl Başlangıcı Ekle
             </Text>
           </TouchableOpacity>
         </View>
