@@ -1,24 +1,80 @@
-import { useState, useEffect } from "react";
-import { View, Text, StatusBar, TouchableOpacity, ScrollView } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, Text, StatusBar, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
-import { addDays, format, differenceInDays, startOfDay } from "date-fns";
+import { addDays, format, differenceInDays, startOfDay, setHours, setMinutes } from "date-fns";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
+
+// Bildirim handler yapılandırması
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 // AsyncStorage anahtarları
 const STORAGE_KEY = "@CycleTrack:lastPeriodStart";
+const NOTIFICATION_ID_KEY = "@CycleTrack:notificationId";
 
 export default function Index() {
   // State tanımlamaları
   const [lastPeriodStart, setLastPeriodStart] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Yükleme durumu
+  const [notificationPermission, setNotificationPermission] = useState<boolean>(false);
+  const notificationListener = useRef<any>();
+  const responseListener = useRef<any>();
   const cycleLength = 28; // Döngü süresi (gün)
   const bleedingDays = 5; // Kanama süresi (gün)
 
-  // Uygulama açıldığında AsyncStorage'dan veriyi yükle
+  // Uygulama açıldığında AsyncStorage'dan veriyi yükle ve bildirim iznini kontrol et
   useEffect(() => {
     loadPeriodStart();
+    checkNotificationPermission();
+    
+    // Bildirim listener'ları
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log("Bildirim alındı:", notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log("Bildirime tıklandı:", response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener.current);
+      Notifications.removeNotificationSubscription(responseListener.current);
+    };
   }, []);
+
+  // Bildirim iznini kontrol et
+  const checkNotificationPermission = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    setNotificationPermission(status === "granted");
+  };
+
+  // Bildirim izni iste
+  const requestNotificationPermission = async () => {
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status === "granted") {
+        setNotificationPermission(true);
+        Alert.alert("Başarılı", "Bildirim izni verildi!");
+        
+        // Eğer zaten bir tarih varsa bildirimi planla
+        if (lastPeriodStart) {
+          scheduleNotification();
+        }
+      } else {
+        Alert.alert("İzin Reddedildi", "Bildirimler için izin gereklidir.");
+      }
+    } catch (error) {
+      console.error("Bildirim izni hatası:", error);
+      Alert.alert("Hata", "Bildirim izni alınamadı.");
+    }
+  };
 
   // AsyncStorage'dan regl başlangıç tarihini yükle
   const loadPeriodStart = async () => {
@@ -34,12 +90,15 @@ export default function Index() {
     }
   };
 
-  // lastPeriodStart değiştiğinde AsyncStorage'a kaydet
+  // lastPeriodStart değiştiğinde AsyncStorage'a kaydet ve bildirimi planla
   useEffect(() => {
     if (!isLoading) {
       savePeriodStart();
+      if (lastPeriodStart && notificationPermission) {
+        scheduleNotification();
+      }
     }
-  }, [lastPeriodStart, isLoading]);
+  }, [lastPeriodStart, isLoading, notificationPermission]);
 
   // AsyncStorage'a regl başlangıç tarihini kaydet
   const savePeriodStart = async () => {
@@ -48,9 +107,68 @@ export default function Index() {
         await AsyncStorage.setItem(STORAGE_KEY, lastPeriodStart);
       } else {
         await AsyncStorage.removeItem(STORAGE_KEY);
+        // Tarih silindiğinde bildirimi de iptal et
+        cancelNotification();
       }
     } catch (error) {
       console.error("Veri kaydetme hatası:", error);
+    }
+  };
+
+  // Bildirimi planla
+  const scheduleNotification = async () => {
+    if (!lastPeriodStart) return;
+
+    try {
+      // Önce eski bildirimi iptal et
+      await cancelNotification();
+
+      // Sonraki tahmini regl tarihini hesapla
+      const startDate = new Date(lastPeriodStart);
+      const nextPeriodStart = addDays(startDate, cycleLength);
+      
+      // Bildirim tarihi: Tahmini regl tarihinden 2 gün önce
+      const notificationDate = addDays(nextPeriodStart, -2);
+      
+      // Bugünden önceki bir tarihse bildirim planlama
+      const today = startOfDay(new Date());
+      if (notificationDate < today) {
+        console.log("Bildirim tarihi geçmişte, planlanmadı");
+        return;
+      }
+
+      // Saat 09:00 için tarih ayarla
+      const notificationDateTime = setMinutes(setHours(notificationDate, 9), 0);
+
+      // Bildirim içeriği
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Döngü Takibi",
+          body: "Tahmini reglinize 2 gün kaldı.",
+          sound: true,
+        },
+        trigger: notificationDateTime,
+      });
+
+      // Bildirim ID'sini kaydet
+      await AsyncStorage.setItem(NOTIFICATION_ID_KEY, notificationId.toString());
+      console.log("Bildirim planlandı:", notificationId, "Tarih:", format(notificationDateTime, "dd MMMM yyyy HH:mm"));
+    } catch (error) {
+      console.error("Bildirim planlama hatası:", error);
+    }
+  };
+
+  // Bildirimi iptal et
+  const cancelNotification = async () => {
+    try {
+      const savedNotificationId = await AsyncStorage.getItem(NOTIFICATION_ID_KEY);
+      if (savedNotificationId) {
+        await Notifications.cancelScheduledNotificationAsync(parseInt(savedNotificationId));
+        await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
+        console.log("Bildirim iptal edildi:", savedNotificationId);
+      }
+    } catch (error) {
+      console.error("Bildirim iptal hatası:", error);
     }
   };
 
@@ -145,9 +263,35 @@ export default function Index() {
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
+        {/* Bildirim İzni Butonu */}
+        {!notificationPermission && (
+          <View className="mx-4 mt-4 mb-2">
+            <TouchableOpacity
+              className="rounded-xl py-3 px-4 bg-yellow-100 border border-yellow-300"
+              onPress={requestNotificationPermission}
+              activeOpacity={0.8}
+            >
+              <Text className="text-yellow-800 font-semibold text-center">
+                🔔 Bildirim İzni İste
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Bildirim İzni Durumu */}
+        {notificationPermission && (
+          <View className="mx-4 mt-4 mb-2">
+            <View className="rounded-xl py-2 px-4 bg-green-100 border border-green-300">
+              <Text className="text-green-800 font-semibold text-center text-sm">
+                ✅ Bildirim izni verildi
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Bilgi Kartı - Tahmini Sonraki Regl ve Kalan Gün */}
         {lastPeriodStart && (
-          <View className="mx-4 mt-6 mb-4 rounded-2xl bg-pink-50 p-5 shadow-md border border-pink-200">
+          <View className="mx-4 mt-4 mb-4 rounded-2xl bg-pink-50 p-5 shadow-md border border-pink-200">
             {nextPeriodDate && (
               <View className="mb-3">
                 <Text className="text-sm text-purple-600 font-semibold mb-1">
