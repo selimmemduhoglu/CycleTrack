@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, Text, StatusBar, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { addDays, format, differenceInDays, startOfDay } from "date-fns";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 
 // AsyncStorage anahtarları
 const STORAGE_KEY = "@CycleTrack:lastPeriodStart";
@@ -24,10 +24,12 @@ export default function Index() {
   const [cycleLength, setCycleLength] = useState(DEFAULT_CYCLE_LENGTH);
   const [bleedingDays, setBleedingDays] = useState(DEFAULT_BLEEDING_DAYS);
 
-  // Uygulama açıldığında verileri yükle
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Uygulama açıldığında ve sayfa focus olduğunda verileri yükle
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   // Verileri yükle
   const loadData = async () => {
