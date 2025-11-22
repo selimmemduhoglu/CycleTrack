@@ -140,14 +140,17 @@ export default function Index() {
       // Saat 09:00 için tarih ayarla
       const notificationDateTime = setMinutes(setHours(notificationDate, 9), 0);
 
-      // Bildirim içeriği
+      // Bildirim içeriği - Yeni trigger formatı kullanılıyor
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title: "Döngü Takibi",
           body: "Tahmini reglinize 2 gün kaldı.",
           sound: true,
         },
-        trigger: notificationDateTime,
+        trigger: {
+          type: "date",
+          date: notificationDateTime,
+        },
       });
 
       // Bildirim ID'sini kaydet
@@ -163,12 +166,15 @@ export default function Index() {
     try {
       const savedNotificationId = await AsyncStorage.getItem(NOTIFICATION_ID_KEY);
       if (savedNotificationId) {
-        await Notifications.cancelScheduledNotificationAsync(parseInt(savedNotificationId));
+        // Bildirim ID'si string olarak kullanılmalı
+        await Notifications.cancelScheduledNotificationAsync(savedNotificationId);
         await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
         console.log("Bildirim iptal edildi:", savedNotificationId);
       }
     } catch (error) {
       console.error("Bildirim iptal hatası:", error);
+      // Hata durumunda ID'yi temizle
+      await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
     }
   };
 
