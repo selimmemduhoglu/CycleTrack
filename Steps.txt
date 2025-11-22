@@ -1,0 +1,47 @@
+React Native ve Expo kullanarak "CycleTrack" adında yeni bir proje oluştur. 
+Dil olarak TypeScript kullan. 
+Stil işlemleri için NativeWind (TailwindCSS) kurulumunu yap ve yapılandır. 
+Navigasyon için Expo Router kullan. 
+Proje yapısını oluştur ve gerekli tüm konfigürasyon dosyalarını (tailwind.config.js, babel.config.js vb.) hatasız şekilde ayarla.
+
+
+Projeye "react-native-calendars" kütüphanesini ekle (bunu terminalden kur). 
+Şimdi app/index.tsx dosyasını düzenle:
+1. Ekranın tepesinde şık, modern, pastel tonlarda (örneğin yumuşak pembe/eflatun) bir başlık alanı olsun: "Döngü Takibi".
+2. Altına takvimi yerleştir. Takvim modern görünsün, köşeleri yuvarlatılmış olsun.
+3. Takvimin altına "Regl Başlangıcı Ekle" butonu koy.
+Tasarım kadınlara hitap eden, yumuşak ve temiz bir arayüz olsun.
+
+
+
+Şimdi mantığı ekleyelim:
+1. Kullanıcı takvimde bir güne tıkladığında o günü "Regl Başlangıcı" olarak işaretlesin (Koyu Pembe arkaplan).
+2. Bir state tut: Varsayılan döngü süresi 28 gün, kanama süresi 5 gün olsun.
+3. Seçilen tarihe göre, bir sonraki muhtemel regl tarihini otomatik hesapla.
+4. Tahmini tarihleri takvimde "Açık Pembe" veya farklı bir tonda işaretle (MarkedDates kullan).
+5. Ekranda bir kart içinde "Tahmini Sonraki Regl: [Tarih]" ve "Döngüye kalan gün: [X gün]" bilgisini göster.
+
+
+
+Harika gidiyoruz. Şimdi verilerin kalıcı olmasını istiyorum.
+1. "@react-native-async-storage/async-storage" kütüphanesini kullanarak bir yapı kur.
+2. Kullanıcının işaretlediği regl günlerini telefonun hafızasına kaydet.
+3. Uygulama kapatılıp açıldığında takvimdeki işaretler ve hesaplamalar silinmesin, geri gelsin.
+Tüm kodları buna göre güncelle.
+
+
+
+5  -
+Uygulamayı geliştirmeye devam edelim. Şimdi "Local Notification" (Yerel Bildirim) özelliği eklemek istiyorum.
+
+1. Projeye "expo-notifications" kütüphanesini ekle. Gerekli izinlerin (permissions) istendiğinden emin ol.
+
+2. Mantık şu şekilde çalışmalı:
+   - Tahmini regl tarihi hesaplandığında, bu tarihten 2 gün öncesine sabah saat 09:00 için otomatik bir bildirim planla.
+   - Bildirim başlığı: "Döngü Takibi", İçeriği: "Tahmini reglinize 2 gün kaldı." olsun.
+   - Eğer kullanıcı yeni bir tarih girerse, eski planlanmış bildirimleri iptal edip yeni tahmine göre tekrar planla.
+
+3. Ana ekrana (veya geçici olarak bir butona) "Bildirim İzni İste" özelliği ekle ki test edebilelim.
+
+Bu kodları mevcut yapıya (AsyncStorage ve Calendar yapısına) bozmadan entegre et.
+
