@@ -56,18 +56,19 @@ export default function Settings() {
       };
 
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      Alert.alert("Başarılı", "Ayarlar kaydedildi!");
-      router.back();
+      Alert.alert("✅ Başarılı", "Ayarlar kaydedildi!", [
+        { text: "Tamam", onPress: () => router.back() }
+      ]);
     } catch (error) {
       console.error("Ayarlar kaydetme hatası:", error);
-      Alert.alert("Hata", "Ayarlar kaydedilemedi.");
+      Alert.alert("❌ Hata", "Ayarlar kaydedilemedi.");
     }
   };
 
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <Text className="text-purple-600">Yükleniyor...</Text>
+        <Text className="text-purple-600 text-lg">Yükleniyor...</Text>
       </SafeAreaView>
     );
   }
@@ -76,70 +77,99 @@ export default function Settings() {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="dark" />
       
-      {/* Header */}
-      <View className="bg-purple-100 pt-6 pb-6 px-6 border-b border-purple-200">
+      {/* Header - Modern Tasarım */}
+      <View className="bg-purple-200 pt-8 pb-6 px-6 border-b-2 border-purple-300 shadow-md">
         <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => router.back()} className="p-2">
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            className="bg-white rounded-full p-3 shadow-md"
+            activeOpacity={0.7}
+          >
             <Text className="text-2xl">←</Text>
           </TouchableOpacity>
-          <Text className="text-3xl font-bold text-purple-800">Ayarlar</Text>
-          <View className="w-10" />
+          <View className="flex-1 items-center">
+            <Text className="text-3xl font-extrabold text-purple-900">Ayarlar</Text>
+            <Text className="text-sm text-purple-700 mt-1">Özelleştirme</Text>
+          </View>
+          <View className="w-12" />
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ padding: 20, paddingBottom: 30 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View className="gap-6">
-          {/* Döngü Süresi */}
+          {/* Döngü Süresi - Modern Kart */}
           <View className="bg-purple-50 rounded-3xl p-6 border-2 border-purple-200 shadow-lg">
-            <Text className="text-lg font-bold text-purple-900 mb-2">
-              Döngü Süresi (Gün)
-            </Text>
-            <Text className="text-sm text-purple-600 mb-4">
-              Varsayılan: 28 gün (21-45 gün arası)
-            </Text>
+            <View className="flex-row items-center mb-4">
+              <Text className="text-3xl mr-3">🔄</Text>
+              <View className="flex-1">
+                <Text className="text-lg font-bold text-purple-900 mb-1">
+                  Döngü Süresi
+                </Text>
+                <Text className="text-sm text-purple-600">
+                  Varsayılan: 28 gün (21-45 gün arası)
+                </Text>
+              </View>
+            </View>
             <TextInput
-              className="bg-white rounded-2xl p-4 text-xl font-semibold text-purple-900 border-2 border-purple-200"
+              className="bg-white rounded-2xl p-5 text-2xl font-bold text-purple-900 border-2 border-purple-300 text-center"
               value={cycleLength}
               onChangeText={setCycleLength}
               keyboardType="numeric"
               placeholder="28"
+              placeholderTextColor="#a78bfa"
             />
           </View>
 
-          {/* Kanama Süresi */}
+          {/* Kanama Süresi - Modern Kart */}
           <View className="bg-pink-50 rounded-3xl p-6 border-2 border-pink-200 shadow-lg">
-            <Text className="text-lg font-bold text-purple-900 mb-2">
-              Kanama Süresi (Gün)
-            </Text>
-            <Text className="text-sm text-purple-600 mb-4">
-              Varsayılan: 5 gün (1-10 gün arası)
-            </Text>
+            <View className="flex-row items-center mb-4">
+              <Text className="text-3xl mr-3">🩸</Text>
+              <View className="flex-1">
+                <Text className="text-lg font-bold text-purple-900 mb-1">
+                  Kanama Süresi
+                </Text>
+                <Text className="text-sm text-purple-600">
+                  Varsayılan: 5 gün (1-10 gün arası)
+                </Text>
+              </View>
+            </View>
             <TextInput
-              className="bg-white rounded-2xl p-4 text-xl font-semibold text-purple-900 border-2 border-pink-200"
+              className="bg-white rounded-2xl p-5 text-2xl font-bold text-purple-900 border-2 border-pink-300 text-center"
               value={bleedingDays}
               onChangeText={setBleedingDays}
               keyboardType="numeric"
               placeholder="5"
+              placeholderTextColor="#f9a8d4"
             />
           </View>
 
-          {/* Kaydet Butonu */}
+          {/* Kaydet Butonu - Modern Tasarım */}
           <TouchableOpacity
-            className="rounded-3xl py-6 px-8 shadow-lg border-2 border-purple-300 bg-purple-600"
+            className="rounded-3xl py-6 px-8 shadow-xl border-2 border-purple-400 bg-purple-600"
             onPress={saveSettings}
             activeOpacity={0.8}
           >
-            <Text className="text-white text-2xl font-bold text-center tracking-wide">
-              💾 Ayarları Kaydet
-            </Text>
+            <View className="flex-row items-center justify-center">
+              <Text className="text-3xl mr-3">💾</Text>
+              <Text className="text-white text-2xl font-bold tracking-wide">
+                Ayarları Kaydet
+              </Text>
+            </View>
           </TouchableOpacity>
 
-          {/* Bilgi Kartı */}
-          <View className="bg-blue-50 rounded-2xl p-5 border-2 border-blue-200">
-            <Text className="text-blue-800 font-semibold mb-2">ℹ️ Bilgi</Text>
-            <Text className="text-blue-700 text-sm leading-5">
+          {/* Bilgi Kartı - Modern Tasarım */}
+          <View className="bg-blue-50 rounded-3xl p-6 border-2 border-blue-200 shadow-md">
+            <View className="flex-row items-center mb-3">
+              <Text className="text-2xl mr-3">ℹ️</Text>
+              <Text className="text-blue-800 font-bold text-base">Bilgi</Text>
+            </View>
+            <Text className="text-blue-700 text-sm leading-6">
               Bu ayarlar tahmini regl tarihlerinin hesaplanmasında kullanılır. 
-              Kişisel döngünüze göre özelleştirebilirsiniz.
+              Kişisel döngünüze göre özelleştirebilirsiniz. Değişiklikler hemen uygulanır.
             </Text>
           </View>
         </View>
@@ -147,4 +177,3 @@ export default function Settings() {
     </SafeAreaView>
   );
 }
-

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, Text, StatusBar, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StatusBar, TouchableOpacity, ScrollView, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { addDays, format, differenceInDays, startOfDay } from "date-fns";
@@ -14,6 +14,8 @@ const SETTINGS_KEY = "@CycleTrack:settings";
 // Varsayılan ayarlar
 const DEFAULT_CYCLE_LENGTH = 28;
 const DEFAULT_BLEEDING_DAYS = 5;
+
+const { width } = Dimensions.get("window");
 
 export default function Index() {
   const router = useRouter();
@@ -175,40 +177,50 @@ export default function Index() {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
       
-      {/* Başlık Alanı - Modern Tasarım */}
-      <View className="bg-purple-200 pt-8 pb-10 px-6">
-        <Text className="text-5xl font-extrabold text-purple-800 text-center tracking-tight">
+      {/* Başlık Alanı - Modern Gradient Tasarım */}
+      <View className="bg-purple-200 pt-10 pb-12 px-6 shadow-md">
+        <Text className="text-5xl font-extrabold text-purple-900 text-center tracking-tight mb-2">
           Döngü Takibi
         </Text>
-        <Text className="text-base text-purple-600 text-center mt-3 font-medium">
+        <Text className="text-base text-purple-700 text-center font-medium">
           Sağlığınızı takip edin, kendinizi tanıyın
         </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ paddingBottom: 30 }} 
+        showsVerticalScrollIndicator={false}
+      >
         {/* Bilgi Kartı - Modern Tasarım */}
         {lastPeriodStart && (
-          <View className="mx-5 mt-6 mb-5 rounded-3xl bg-pink-50 p-6 shadow-xl border-2 border-pink-200">
+          <View className="mx-5 mt-6 mb-6 rounded-3xl bg-pink-50 p-6 shadow-xl border-2 border-pink-200">
             {nextPeriodDate && (
-              <View className="mb-4 pb-4 border-b border-pink-200">
-                <Text className="text-xs text-purple-500 font-semibold mb-2 uppercase tracking-wide">
-                  Tahmini Sonraki Regl
-                </Text>
-                <Text className="text-2xl font-bold text-purple-900">
+              <View className="mb-5 pb-5 border-b-2 border-pink-200">
+                <View className="flex-row items-center mb-2">
+                  <Text className="text-2xl mr-2">📅</Text>
+                  <Text className="text-xs text-purple-600 font-bold mb-1 uppercase tracking-wider">
+                    Tahmini Sonraki Regl
+                  </Text>
+                </View>
+                <Text className="text-2xl font-bold text-purple-900 leading-tight">
                   {nextPeriodDate}
                 </Text>
               </View>
             )}
             {daysLeft !== null && daysLeft >= 0 && (
               <View>
-                <Text className="text-xs text-purple-500 font-semibold mb-2 uppercase tracking-wide">
-                  Döngüye Kalan Gün
-                </Text>
+                <View className="flex-row items-center mb-2">
+                  <Text className="text-2xl mr-2">⏰</Text>
+                  <Text className="text-xs text-purple-600 font-bold mb-1 uppercase tracking-wider">
+                    Döngüye Kalan Gün
+                  </Text>
+                </View>
                 <View className="flex-row items-baseline">
-                  <Text className="text-4xl font-extrabold text-pink-600 mr-2">
+                  <Text className="text-5xl font-extrabold text-pink-600 mr-3">
                     {daysLeft}
                   </Text>
-                  <Text className="text-lg text-purple-700 font-semibold">
+                  <Text className="text-xl text-purple-700 font-bold">
                     gün
                   </Text>
                 </View>
@@ -217,35 +229,67 @@ export default function Index() {
           </View>
         )}
 
-        {/* Hızlı Erişim Butonları */}
-        <View className="flex-row mx-5 mb-5 gap-3">
-          <TouchableOpacity
-            className="flex-1 rounded-2xl bg-purple-100 p-4 border-2 border-purple-200"
-            onPress={() => router.push("/history")}
-            activeOpacity={0.7}
-          >
-            <Text className="text-center text-purple-800 font-bold text-sm">
-              📅 Geçmiş
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-2xl bg-pink-100 p-4 border-2 border-pink-200"
-            onPress={() => router.push("/statistics")}
-            activeOpacity={0.7}
-          >
-            <Text className="text-center text-pink-800 font-bold text-sm">
-              📊 İstatistikler
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-2xl bg-purple-100 p-4 border-2 border-purple-200"
-            onPress={() => router.push("/settings")}
-            activeOpacity={0.7}
-          >
-            <Text className="text-center text-purple-800 font-bold text-sm">
-              ⚙️ Ayarlar
-            </Text>
-          </TouchableOpacity>
+        {/* Hızlı Erişim Butonları - Modern Kart Tasarımı */}
+        <View className="mx-5 mb-6">
+          <Text className="text-lg font-bold text-purple-900 mb-4 px-1">Hızlı Erişim</Text>
+          <View className="flex-row flex-wrap gap-3">
+            {/* Geçmiş Butonu */}
+            <TouchableOpacity
+              className="rounded-3xl p-5 shadow-lg border-2 border-purple-200"
+              style={{ 
+                backgroundColor: '#f3e8ff',
+                width: (width - 60) / 2 - 6
+              }}
+              onPress={() => router.push("/history")}
+              activeOpacity={0.7}
+            >
+              <Text className="text-4xl text-center mb-3">📅</Text>
+              <Text className="text-center text-purple-900 font-bold text-base">
+                Geçmiş
+              </Text>
+              <Text className="text-center text-purple-600 text-xs mt-1">
+                Döngüleri görüntüle
+              </Text>
+            </TouchableOpacity>
+
+            {/* İstatistikler Butonu */}
+            <TouchableOpacity
+              className="rounded-3xl p-5 shadow-lg border-2 border-pink-200"
+              style={{ 
+                backgroundColor: '#fce7f3',
+                width: (width - 60) / 2 - 6
+              }}
+              onPress={() => router.push("/statistics")}
+              activeOpacity={0.7}
+            >
+              <Text className="text-4xl text-center mb-3">📊</Text>
+              <Text className="text-center text-pink-900 font-bold text-base">
+                İstatistikler
+              </Text>
+              <Text className="text-center text-pink-600 text-xs mt-1">
+                Analiz ve raporlar
+              </Text>
+            </TouchableOpacity>
+
+            {/* Ayarlar Butonu */}
+            <TouchableOpacity
+              className="rounded-3xl p-5 shadow-lg border-2 border-indigo-200"
+              style={{ 
+                backgroundColor: '#eef2ff',
+                width: (width - 60) / 2 - 6
+              }}
+              onPress={() => router.push("/settings")}
+              activeOpacity={0.7}
+            >
+              <Text className="text-4xl text-center mb-3">⚙️</Text>
+              <Text className="text-center text-indigo-900 font-bold text-base">
+                Ayarlar
+              </Text>
+              <Text className="text-center text-indigo-600 text-xs mt-1">
+                Özelleştir
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Takvim Container - Modern Tasarım */}
@@ -289,12 +333,22 @@ export default function Index() {
         {/* Regl Başlangıcı Ekle Butonu - Modern Tasarım */}
         <View className="px-5 mb-5">
           <TouchableOpacity
-            className="rounded-3xl py-6 px-8 shadow-lg border-2 border-pink-300"
+            className="rounded-3xl py-5 px-8 shadow-xl border-2 border-pink-400"
             style={{ backgroundColor: '#FF69B4' }}
             activeOpacity={0.8}
+            onPress={() => {
+              // Takvimi açmak için bir gün seçilmesi gerekiyor
+              // Bu buton bilgilendirme amaçlı
+            }}
           >
-            <Text className="text-white text-2xl font-bold text-center tracking-wide">
-              ➕ Regl Başlangıcı Ekle
+            <View className="flex-row items-center justify-center">
+              <Text className="text-3xl mr-3">➕</Text>
+              <Text className="text-white text-xl font-bold tracking-wide">
+                Takvimden Tarih Seç
+              </Text>
+            </View>
+            <Text className="text-white text-sm text-center mt-2 opacity-90">
+              Takvimde bir güne dokunarak regl başlangıcı ekleyebilirsiniz
             </Text>
           </TouchableOpacity>
         </View>

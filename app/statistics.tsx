@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -8,6 +8,8 @@ import { parseISO, differenceInDays, format } from "date-fns";
 
 const PERIODS_HISTORY_KEY = "@CycleTrack:periodsHistory";
 const STORAGE_KEY = "@CycleTrack:lastPeriodStart";
+
+const { width } = Dimensions.get("window");
 
 export default function Statistics() {
   const router = useRouter();
@@ -89,7 +91,7 @@ export default function Statistics() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <Text className="text-purple-600">Yükleniyor...</Text>
+        <Text className="text-purple-600 text-lg">Yükleniyor...</Text>
       </SafeAreaView>
     );
   }
@@ -98,85 +100,121 @@ export default function Statistics() {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="dark" />
       
-      {/* Header */}
-      <View className="bg-purple-100 pt-6 pb-6 px-6 border-b border-purple-200">
+      {/* Header - Modern Tasarım */}
+      <View className="bg-purple-200 pt-8 pb-6 px-6 border-b-2 border-purple-300 shadow-md">
         <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => router.back()} className="p-2">
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            className="bg-white rounded-full p-3 shadow-md"
+            activeOpacity={0.7}
+          >
             <Text className="text-2xl">←</Text>
           </TouchableOpacity>
-          <Text className="text-3xl font-bold text-purple-800">İstatistikler</Text>
-          <View className="w-10" />
+          <View className="flex-1 items-center">
+            <Text className="text-3xl font-extrabold text-purple-900">İstatistikler</Text>
+            <Text className="text-sm text-purple-700 mt-1">Detaylı analiz</Text>
+          </View>
+          <View className="w-12" />
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+      <ScrollView 
+        className="flex-1" 
+        contentContainerStyle={{ padding: 20, paddingBottom: 30 }}
+        showsVerticalScrollIndicator={false}
+      >
         {totalRecords === 0 ? (
           <View className="items-center justify-center py-20">
-            <Text className="text-6xl mb-4">📊</Text>
-            <Text className="text-xl text-purple-700 font-semibold mb-2">
+            <View className="bg-purple-100 rounded-full p-8 mb-6">
+              <Text className="text-6xl">📊</Text>
+            </View>
+            <Text className="text-2xl text-purple-900 font-bold mb-3">
               Henüz yeterli veri yok
             </Text>
-            <Text className="text-purple-500 text-center">
-              Daha fazla kayıt ekleyerek istatistikleri görebilirsiniz
+            <Text className="text-purple-600 text-center text-base leading-6 max-w-xs">
+              Daha fazla kayıt ekleyerek istatistikleri görebilirsiniz. 
+              En az 2 kayıt gereklidir.
             </Text>
           </View>
         ) : (
           <View className="gap-5">
-            {/* Toplam Kayıt */}
-            <View className="bg-purple-50 rounded-3xl p-6 border-2 border-purple-200 shadow-lg">
-              <Text className="text-sm text-purple-600 font-semibold mb-2 uppercase tracking-wide">
-                Toplam Kayıt
-              </Text>
-              <Text className="text-5xl font-extrabold text-purple-900">
-                {totalRecords}
-              </Text>
+            {/* Toplam Kayıt - Büyük Kart */}
+            <View className="bg-purple-50 rounded-3xl p-7 border-2 border-purple-200 shadow-xl">
+              <View className="flex-row items-center mb-4">
+                <Text className="text-3xl mr-3">📈</Text>
+                <Text className="text-sm text-purple-600 font-bold uppercase tracking-wider">
+                  Toplam Kayıt
+                </Text>
+              </View>
+              <View className="flex-row items-baseline">
+                <Text className="text-6xl font-extrabold text-purple-900 mr-3">
+                  {totalRecords}
+                </Text>
+                <Text className="text-xl text-purple-700 font-semibold">
+                  kayıt
+                </Text>
+              </View>
             </View>
 
             {/* Ortalama Döngü Süresi */}
             {avgCycle !== null && (
-              <View className="bg-pink-50 rounded-3xl p-6 border-2 border-pink-200 shadow-lg">
-                <Text className="text-sm text-purple-600 font-semibold mb-2 uppercase tracking-wide">
-                  Ortalama Döngü Süresi
-                </Text>
+              <View className="bg-pink-50 rounded-3xl p-7 border-2 border-pink-200 shadow-xl">
+                <View className="flex-row items-center mb-4">
+                  <Text className="text-3xl mr-3">📊</Text>
+                  <Text className="text-sm text-purple-600 font-bold uppercase tracking-wider">
+                    Ortalama Döngü Süresi
+                  </Text>
+                </View>
                 <View className="flex-row items-baseline">
-                  <Text className="text-5xl font-extrabold text-pink-700 mr-2">
+                  <Text className="text-6xl font-extrabold text-pink-700 mr-3">
                     {avgCycle}
                   </Text>
-                  <Text className="text-xl text-purple-700 font-semibold">gün</Text>
+                  <Text className="text-xl text-purple-700 font-semibold">
+                    gün
+                  </Text>
                 </View>
               </View>
             )}
 
-            {/* En Kısa ve En Uzun Döngü */}
+            {/* En Kısa ve En Uzun Döngü - Yan Yana */}
             {shortestCycle !== null && longestCycle !== null && (
               <View className="flex-row gap-4">
-                <View className="flex-1 bg-green-50 rounded-3xl p-5 border-2 border-green-200 shadow-lg">
-                  <Text className="text-xs text-green-600 font-semibold mb-2 uppercase tracking-wide">
-                    En Kısa
-                  </Text>
-                  <Text className="text-3xl font-extrabold text-green-800">
+                <View className="flex-1 bg-green-50 rounded-3xl p-6 border-2 border-green-200 shadow-lg">
+                  <View className="flex-row items-center mb-3">
+                    <Text className="text-2xl mr-2">⬇️</Text>
+                    <Text className="text-xs text-green-600 font-bold uppercase tracking-wide">
+                      En Kısa
+                    </Text>
+                  </View>
+                  <Text className="text-4xl font-extrabold text-green-800 mb-1">
                     {shortestCycle}
                   </Text>
-                  <Text className="text-sm text-green-600">gün</Text>
+                  <Text className="text-sm text-green-600 font-semibold">gün</Text>
                 </View>
-                <View className="flex-1 bg-orange-50 rounded-3xl p-5 border-2 border-orange-200 shadow-lg">
-                  <Text className="text-xs text-orange-600 font-semibold mb-2 uppercase tracking-wide">
-                    En Uzun
-                  </Text>
-                  <Text className="text-3xl font-extrabold text-orange-800">
+                <View className="flex-1 bg-orange-50 rounded-3xl p-6 border-2 border-orange-200 shadow-lg">
+                  <View className="flex-row items-center mb-3">
+                    <Text className="text-2xl mr-2">⬆️</Text>
+                    <Text className="text-xs text-orange-600 font-bold uppercase tracking-wide">
+                      En Uzun
+                    </Text>
+                  </View>
+                  <Text className="text-4xl font-extrabold text-orange-800 mb-1">
                     {longestCycle}
                   </Text>
-                  <Text className="text-sm text-orange-600">gün</Text>
+                  <Text className="text-sm text-orange-600 font-semibold">gün</Text>
                 </View>
               </View>
             )}
 
             {/* Son Regl */}
             {lastPeriod && (
-              <View className="bg-blue-50 rounded-3xl p-6 border-2 border-blue-200 shadow-lg">
-                <Text className="text-sm text-blue-600 font-semibold mb-2 uppercase tracking-wide">
-                  Son Regl Başlangıcı
-                </Text>
+              <View className="bg-blue-50 rounded-3xl p-7 border-2 border-blue-200 shadow-xl">
+                <View className="flex-row items-center mb-4">
+                  <Text className="text-3xl mr-3">📅</Text>
+                  <Text className="text-sm text-blue-600 font-bold uppercase tracking-wider">
+                    Son Regl Başlangıcı
+                  </Text>
+                </View>
                 <Text className="text-2xl font-bold text-blue-900">
                   {format(parseISO(lastPeriod), "dd MMMM yyyy")}
                 </Text>
@@ -188,4 +226,3 @@ export default function Statistics() {
     </SafeAreaView>
   );
 }
-
